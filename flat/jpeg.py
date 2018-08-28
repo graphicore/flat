@@ -361,21 +361,21 @@ def _parse_app14(readable):
     return transform
 
 class _frame_component(object):
-    
+
     __slots__ = 'identifier', 'h', 'v', 'destination'
-    
+
     def __init__(self, identifier, h, v, destination):
         self.identifier, self.h, self.v, self.destination = identifier, h, v, destination
 
 class _coding_destination(object):
-    
+
     __slots__ = 'dc', 'ac'
-    
+
     def __init__(self, dc, ac):
         self.dc, self.ac = dc, ac
 
 class _huffman_cache(object):
-    
+
     def __init__(self, lengths, values):
         self.values = values
         self.offsets = offsets = array('H', [0])
@@ -394,13 +394,13 @@ class _huffman_cache(object):
             size += 1
 
 class _entropy_decoder(object):
-    
+
     def __init__(self, readable):
         self.readable = readable
         self.value = 0
         self.length = 0
         self.rst = 0
-    
+
     def restart(self):
         marker = self.readable.uint16()
         if marker != 0xffd0 + self.rst:
@@ -408,7 +408,7 @@ class _entropy_decoder(object):
         self.value = 0
         self.length = 0
         self.rst = (self.rst + 1) & 7
-    
+
     def fill(self, length):
         while True:
             byte = self.readable.uint8()
@@ -420,7 +420,7 @@ class _entropy_decoder(object):
                     self.readable.position -= 2
             if self.length >= length:
                 break
-    
+
     def decodehuffman(self, cache):
         if self.length < 16:
             self.fill(16)
@@ -431,7 +431,7 @@ class _entropy_decoder(object):
         code = (self.value >> (self.length - size)) & ((1 << size) - 1)
         self.length -= size
         return cache.values[code - cache.offsets[size]]
-    
+
     def receiveextend(self, length):
         if self.length < length:
             self.fill(length)
@@ -440,7 +440,7 @@ class _entropy_decoder(object):
         if value < 1 << (length - 1):
             return value - (1 << length) + 1
         return value
-    
+
     def decode(self, previous, block, q, dc, ac):
         i = 0
         while i < 64:
@@ -504,7 +504,7 @@ def _marker_segment(marker, data):
     return bytes('\xff' + marker + pack('>H', len(data) + 2) + data) # TODO python 3: remove bytes
 
 class _entropy_encoder(object):
-    
+
     def __init__(self):
         c = [i for j in reversed(range(16)) for i in range(1 << j)]
         s = [j for j in range(1, 16) for i in range(1 << (j - 1))]
@@ -512,7 +512,7 @@ class _entropy_encoder(object):
         self.codes, self.sizes = c, s
         self.value, self.length = 0, 0
         self.data = bytearray()
-    
+
     def encode(self, previous, block, scale, dc, ac):
         _forward_dct(block)
         for i in range(64):
@@ -539,7 +539,7 @@ class _entropy_encoder(object):
         if n > 0:
             self.write(*ac[0])
         return block[0]
-    
+
     def write(self, value, length):
         data = self.data
         value += (self.value << length)
@@ -554,7 +554,7 @@ class _entropy_encoder(object):
                 data.append(v)
         self.value = value & 0xff
         self.length = length
-    
+
     def dump(self):
         return bytes(self.data) # TODO python 3: remove bytes
 
@@ -562,11 +562,11 @@ class _entropy_encoder(object):
 
 
 class jpeg(object):
-    
+
     @staticmethod
     def valid(data):
         return data.startswith('\xff\xd8\xff')
-    
+
     def __init__(self, data):
         self.readable = r = readable(data)
         self.width, self.height, self.kind, self.n = 0, 0, '', 0
@@ -626,7 +626,7 @@ class jpeg(object):
                 if marker == 0xdf: # EXP
                     raise ValueError('Expand reference component(s) not supported.')
                 raise ValueError('Unsupported marker.')
-    
+
     def decompress(self):
         if not self.components:
             raise ValueError('Missing SOF segment.')

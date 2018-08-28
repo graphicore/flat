@@ -55,9 +55,9 @@ def _kernel_contribution(index, scale, length, kernel, support):
 
 
 class image(object):
-    
+
     __slots__ = 'width', 'height', 'kind', 'n', 'data', 'source'
-    
+
     @staticmethod
     def open(path):
         with open(path, 'rb') as f:
@@ -77,7 +77,7 @@ class image(object):
                 i.width, i.height = source.width, source.height
             i.source = source
             return i
-    
+
     def __init__(self, width, height, kind='rgb'):
         self.width, self.height = width, height
         if kind == 'g':
@@ -93,21 +93,21 @@ class image(object):
         self.kind = kind
         self.data = bytearray(width*height*self.n)
         self.source = None
-    
+
     def __eq__(self, other):
         self.decompress(); other.decompress()
         return self.width == other.width and self.height == other.height and \
             self.kind == other.kind and self.data == other.data
-    
+
     def __ne__(self, other):
         return not self == other
-    
+
     def copy(self):
         i = image(0, 0, self.kind)
         i.width, i.height = self.width, self.height
         i.data[:], i.source = self.data, self.source
         return i
-    
+
     def decompress(self):
         if self.source:
             source, self.source = self.source, None
@@ -120,13 +120,13 @@ class image(object):
                 elif rotation == 180:
                     self.flip(True, True)
         return self
-    
+
     def get(self, x, y):
         self.decompress()
         n = self.n
         i = (x + y*self.width)*n
         return tuple(self.data[i:i + n])
-    
+
     def put(self, x, y, components):
         self.decompress()
         n, data = self.n, self.data
@@ -139,7 +139,7 @@ class image(object):
             j += 1
             n -= 1
         return self
-    
+
     def fill(self, components):
         self.decompress()
         n, data = self.n, self.data
@@ -148,7 +148,7 @@ class image(object):
         for i in range(self.width*self.height*n):
             data[i] = components[i%n]
         return self
-    
+
     def white(self):
         self.decompress()
         kind, data = self.kind, self.data
@@ -166,7 +166,7 @@ class image(object):
             else: # cmyk
                 data[i] = data[i+1] = data[i+2] = data[i+3] = 0
         return self
-    
+
     def black(self):
         self.decompress()
         kind, data = self.kind, self.data
@@ -183,7 +183,7 @@ class image(object):
                 data[i] = data[i+1] = data[i+2] = 0
                 data[i+3] = 255
         return self
-    
+
     def blit(self, x, y, source):
         self.decompress()
         if self.kind != source.kind:
@@ -199,7 +199,7 @@ class image(object):
             j = (max(0, -x) + (max(0, -y) + k)*source.width)*n
             self.data[i:i + width*n] = source.data[j:j + width*n]
         return self
-    
+
     def crop(self, x, y, width, height):
         self.decompress()
         w, h, n = self.width, self.height, self.n
@@ -213,7 +213,7 @@ class image(object):
         self.data[width*height*n:] = []
         self.width, self.height = width, height
         return self
-    
+
     def flip(self, horizontal, vertical):
         self.decompress()
         w, h, n, data = self.width, self.height, self.n, self.data
@@ -262,7 +262,7 @@ class image(object):
                         j += 1
                         k -= 1
         return self
-    
+
     def transpose(self):
         self.decompress()
         w, h, n, data = self.width, self.height, self.n, self.data
@@ -292,7 +292,7 @@ class image(object):
         self.width, self.height = h, w
         self.data[:] = result
         return self
-    
+
     def rotate(self, clockwise):
         self.decompress()
         w, h, n, data = self.width, self.height, self.n, self.data
@@ -339,7 +339,7 @@ class image(object):
         self.width, self.height = h, w
         self.data[:] = result
         return self
-    
+
     def resize(self, width=0, height=0, interpolation='bicubic'):
         self.decompress()
         if interpolation == 'nearest':
@@ -391,11 +391,11 @@ class image(object):
         self.width, self.height = width, height
         self.data[:] = result
         return self
-    
+
     def rescale(self, factor, interpolation='bicubic'):
         w, h = int(self.width*factor+0.5), int(self.height*factor+0.5)
         return self.resize(w, h, interpolation)
-    
+
     def blur(self, radius):
         self.decompress()
         kernel = [1]*(radius*2 + 1)
@@ -430,7 +430,7 @@ class image(object):
                     i = (x + y*w)*n + component
                     data[i] = (value + total//2)//total
         return self
-    
+
     def dither(self, levels=2):
         self.decompress()
         # Error diffusion dithering weights by Burkes, D. (1988).
@@ -457,7 +457,7 @@ class image(object):
                 errors[x + 3] += 4*error
                 errors[x + 4] = 2*error
         return self
-    
+
     def gamma(self, value):
         self.decompress()
         data = self.data
@@ -465,28 +465,28 @@ class image(object):
         for i in range(self.width*self.height*self.n):
             data[i] = cache[data[i]]
         return self
-    
+
     def invert(self):
         self.decompress()
         data = self.data
         for i in range(self.width*self.height*self.n):
             data[i] ^= 255
         return self
-    
+
     def jpeg(self, path='', quality=95):
         if isinstance(self.source, jpeg):
             return save(path, self.source.readable.data)
         self.decompress()
         data = jpegserialize(self, quality)
         return save(path, data)
-    
+
     def png(self, path='', optimized=False):
         if isinstance(self.source, png):
             return save(path, self.source.readable.data)
         self.decompress()
         data = pngserialize(self, optimized)
         return save(path, data)
-    
+
     def placed(self, k):
         return placedimage(self, k)
 
@@ -494,36 +494,36 @@ class image(object):
 
 
 class placedimage(object):
-    
+
     __slots__ = 'item', 'k', 'x', 'y', 'width', 'height'
-    
+
     def __init__(self, item, k):
         self.item = item
         self.k = k
         self.x, self.y = 0.0, 0.0
         self.width, self.height = item.width, item.height
-    
+
     def position(self, x, y):
         self.x, self.y = x*self.k, y*self.k
         return self
-    
+
     def frame(self, x, y, width, height):
         self.x, self.y = x*self.k, y*self.k
         self.width, self.height = width*self.k, height*self.k
         return self
-    
+
     def fitwidth(self, width):
         image = self.item
         self.width, self.height = \
             width*self.k, width*image.height/image.width*self.k
         return self
-    
+
     def fitheight(self, height):
         image = self.item
         self.width, self.height = \
             height*image.width/image.height*self.k, height*self.k
         return self
-    
+
     def pdf(self, height, state, resources):
         x, y = self.x, height-self.y-self.height
         w, h = self.width, self.height
@@ -540,7 +540,7 @@ class placedimage(object):
         return 'q %s %s %s %s %s %s cm /%s Do Q' % (
             dump(a), dump(b), dump(c), dump(d), dump(e), dump(f),
             resource.name)
-    
+
     def svg(self):
         image = self.item
         if similar(self.width, self.height*(image.width/image.height)):
@@ -557,7 +557,7 @@ class placedimage(object):
                 dump(self.x), dump(self.y),
                 dump(self.width), dump(self.height), ratio,
                 mime, b64encode(data))
-    
+
     def rasterize(self, rasterizer, k, x, y):
         x, y = int(round(self.x*k + x)), int(round(self.y*k + y))
         w, h = int(self.width*k + 0.5), int(self.height*k + 0.5)
@@ -568,11 +568,11 @@ class placedimage(object):
 
 
 class raw(object):
-    
+
     def __init__(self, width, height):
         self.width, self.height = width, height
         self.data = [0.0]*width*height*3
-    
+
     def put(self, x, y, r, g, b):
         data = self.data
         i = (x + y*self.width)*3

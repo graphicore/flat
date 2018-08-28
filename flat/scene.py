@@ -1,5 +1,4 @@
 from __future__ import division
-from itertools import imap # TODO python 3: imap -> map
 from math import cos, pi, sin, sqrt
 from multiprocessing import Pool
 from random import choice, random
@@ -81,7 +80,7 @@ def _vector_dot(a, b):
     bx, by, bz = b
     return ax*bx + ay*by + az*bz
 
-def _vector_cross(a, b): 
+def _vector_cross(a, b):
     ax, ay, az = a
     bx, by, bz = b
     return ay*bz - az*by, az*bx - ax*bz, ax*by - ay*bx
@@ -92,7 +91,7 @@ _zero = 0.0, 0.0, 0.0
 
 
 class triangle(object):
-    
+
     def __init__(self, a, b, c, material):
         a, b, c = _vector(*a), _vector(*b), _vector(*c)
         u, v = _vector_sub(b, a), _vector_sub(c, a)
@@ -105,7 +104,7 @@ class triangle(object):
         self.leg = _vector_cross(self.normal, self.tangent)
         self.area = _vector_length(_vector_cross(u, v))*0.5
         self.material = material
-    
+
     def intersect(self, origin, direction):
         # Ref.: Moller, T., Trumbore, B. (1997).
         # Fast, Minimum Storage Ray/Triangle Intersection.
@@ -131,7 +130,7 @@ class triangle(object):
         if v < 0.0 or u + v > 1.0:
             return -1.0
         return (self.vx*qx + self.vy*qy + self.vz*qz)*inv_det
-    
+
     def sample(self):
         r = sqrt(random())
         u = 1.0 - r
@@ -140,7 +139,7 @@ class triangle(object):
             self.ax + self.ux*u + self.vx*v,
             self.ay + self.uy*u + self.vy*v,
             self.az + self.uz*u + self.vz*v)
-    
+
     def bbox(self):
         x, y, z = zip(self.a, self.b, self.c)
         return bbox(min(x), min(y), min(z), max(x), max(y), max(z))
@@ -149,7 +148,7 @@ class triangle(object):
 
 
 class bbox(object):
-    
+
     @staticmethod
     def union(bboxes):
         b = bboxes[0]
@@ -169,21 +168,21 @@ class bbox(object):
             if b.maxz > maxz:
                 maxz = b.maxz
         return bbox(minx, miny, minz, maxx, maxy, maxz)
-    
+
     def __init__(self, minx, miny, minz, maxx, maxy, maxz):
         self.minx, self.miny, self.minz = minx, miny, minz
         self.maxx, self.maxy, self.maxz = maxx, maxy, maxz
-    
+
     def axis(self):
         x, y, z = self.maxx-self.minx, self.maxy-self.miny, self.maxz-self.minz
         return 0 if x > y and x > z else 1 if y > z else 2
-    
+
     def centroid(self):
         return (
             (self.minx + self.maxx)*0.5,
             (self.miny + self.maxy)*0.5,
             (self.minz + self.maxz)*0.5)
-    
+
     def intersect(self, origin, inverse, minimum):
         # Ref.: Williams, A., Barrus, S., Morley, R. K., Shirley, P. (2003).
         # An Efficient and Robust Ray-Box Intersection Algorithm.
@@ -225,12 +224,12 @@ class bbox(object):
 
 
 class diffuse(object):
-    
+
     def __init__(self, reflectance, emittance=None):
         self.reflectance = _vector(*reflectance)
         self.emittance = _vector(*emittance) if emittance else _zero
         self.max = max(reflectance)
-    
+
     def scatter(self, direction, tangent, leg, normal, u0, u1):
         phi = 2.0*pi*u0
         r = sqrt(u1)
@@ -267,13 +266,13 @@ def _bvh_build(items):
 
 
 class bvh(object):
-    
+
     def __init__(self, items):
         items = [(i, b, b.centroid()) for i, b in [
             (i, i.bbox()) for i in items]]
         self.tree = _bvh_build(items)
         self.stack = [None]*32
-    
+
     def intersect(self, origin, direction, previous):
         dx, dy, dz = direction
         inversed = 1.0/dx, 1.0/dy, 1.0/dz
@@ -305,7 +304,7 @@ class bvh(object):
 
 
 class scene(object):
-    
+
     def __init__(self):
         self.sky = 0.09, 0.09, 0.11
         self.ground = 0.10, 0.09, 0.07
@@ -313,14 +312,14 @@ class scene(object):
         self.target = 0.0, 0.0, 0.0
         self.length = 50.0
         self.items = []
-    
+
     def environment(self, sky, ground):
         self.sky, self.ground = _vector(*sky), _vector(*ground)
-    
+
     def camera(self, origin, target, length=50.0):
         self.origin, self.target = _vector(*origin), _vector(*target)
         self.length = float(length)
-    
+
     def view(self):
         direction = _vector_unit(_vector_sub(self.target, self.origin))
         up = 0.0, 1.0, 0.0
@@ -332,13 +331,13 @@ class scene(object):
         up = _vector_unit(_vector_cross(right, direction))
         forward = _vector_scale(direction, self.length/18.0) # 1/tan((2*atan(36/(2*length)))/2)
         return up, right, forward
-    
+
     def clear(self):
         del self.items[:] # TODO python 3: list.clear()
-    
+
     def add(self, mesh, material):
         self.items.append((mesh, material))
-    
+
     def render(self, width, height, samples=10, multiprocessing=True, info=True):
         if info:
             print('Rendering...')
@@ -362,7 +361,7 @@ class scene(object):
             pool = Pool(initializer=_render_initializer, initargs=context)
             result = pool.imap(_pathtracing_row, range(height))
         else:
-            result = imap(_pathtracing_row, range(height), context*height)
+            result = map(_pathtracing_row, range(height), context*height)
         rows = []
         step = 0
         for y, row in enumerate(result):
