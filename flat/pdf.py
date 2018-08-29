@@ -9,31 +9,31 @@ from .png import png
 
 
 class null(object):
-    
+
     def pdf(self):
         return ''
 
 class boolean(object):
-    
+
     def __init__(self, value):
         self.value = value
-    
+
     def pdf(self):
         return 'true' if self.value else 'false'
 
 class number(object):
-    
+
     def __init__(self, number):
         self.number = number
-    
+
     def pdf(self):
         return dump(self.number)
 
 class string(object):
-    
+
     def __init__(self, string):
         self.string = string
-    
+
     def pdf(self):
         return '(%s)' % self.string
 
@@ -46,10 +46,10 @@ class hexstring(object):
         return '<%s>' % hexlify(self.string)
 
 class name(object):
-    
+
     def __init__(self, name):
         self.name = name
-    
+
     def pdf(self):
         special = '#()<>[]{}/%'
         characters = ['/']
@@ -60,18 +60,18 @@ class name(object):
         return ''.join(characters)
 
 class array(object):
-    
+
     def __init__(self, array):
         self.array = array
-    
+
     def pdf(self):
         return '[%s]' % ' '.join(item.pdf() for item in self.array)
 
 class dictionary(object):
-    
+
     def __init__(self, dictionary):
         self.dictionary = dictionary
-    
+
     def pdf(self):
         return '<< %s >>' % ' '.join(
             '/%s %s' % (k, v.pdf()) for k, v in self.dictionary.items())
@@ -81,7 +81,7 @@ class obj(object):
     def __init__(self, tag, item):
         self.tag = tag
         self.item = item
-    
+
     def pdf(self):
         return (
             '%d 0 obj\n'
@@ -89,12 +89,12 @@ class obj(object):
             'endobj') % (self.tag, self.item.pdf())
 
 class stream(object):
-    
+
     def __init__(self, tag, dictionary, stream):
         self.tag = tag
         self.dictionary = dictionary
         self.stream = stream
-    
+
     def pdf(self):
         d = dictionary(self.dictionary)
         return (
@@ -106,10 +106,10 @@ class stream(object):
             'endobj') % (self.tag, d.pdf(), self.stream)
 
 class reference(object):
-    
+
     def __init__(self, obj):
         self.obj = obj
-    
+
     def pdf(self):
         return '%d 0 R' % self.obj.tag
 
@@ -117,12 +117,12 @@ class reference(object):
 
 
 class _graphic_state(object):
-    
+
     __slots__ = 'stroke', 'fill', 'width', 'cap', 'join', 'limit', 'name', 'size'
-    
+
     def __init__(self):
         self.reset()
-    
+
     def reset(self):
         self.stroke = self.fill = gray(0)
         self.width = 1.0
@@ -136,14 +136,14 @@ class _graphic_state(object):
 
 
 class _named_resource(object):
-    
+
     __slots__ = 'name', 'reference'
-    
+
     def __init__(self, name, obj):
         self.name, self.reference = name, reference(obj)
 
 class _document_resources(object):
-    
+
     def __init__(self):
         self.cache = {}
         self.spaces = {}
@@ -151,13 +151,13 @@ class _document_resources(object):
         self.images = {}
         self.states = {}
         self.dependencies = []
-    
+
     def reset(self):
         self.spaces.clear()
         self.fonts.clear()
         self.images.clear()
         self.states.clear()
-    
+
     def space(self, color):
         key = color.name
         if key not in self.spaces:
@@ -181,7 +181,7 @@ class _document_resources(object):
                             'N': number(1)})])))
             self.spaces[key] = self.cache[key]
         return self.spaces[key]
-    
+
     def font(self, font):
         key = font.name
         if key not in self.fonts:
@@ -266,7 +266,7 @@ class _document_resources(object):
                         'ToUnicode': reference(tounicode)})))
             self.fonts[key] = self.cache[key]
         return self.fonts[key]
-    
+
     def image(self, image):
         if isinstance(image.source, png):
             key = data = image.source.idat()
@@ -301,7 +301,7 @@ class _document_resources(object):
                     stream(0, setup, data))
             self.images[key] = self.cache[key]
         return self.images[key]
-    
+
     def overprint(self, stroke, fill):
         key = stroke, fill
         if key not in self.states:
@@ -314,7 +314,7 @@ class _document_resources(object):
                         'OPM': number(1)})))
             self.states[key] = self.cache[key]
         return self.states[key]
-    
+
     def references(self):
         resources = {}
         procedures = ['PDF']
@@ -334,7 +334,7 @@ class _document_resources(object):
                 {r.name: r.reference for r in self.states.values()})
         resources['ProcSet'] = array(map(name, procedures))
         return dictionary(resources)
-    
+
     def objects(self):
         objects = [resource.reference.obj for resource in self.cache.values()]
         objects.extend(self.dependencies)

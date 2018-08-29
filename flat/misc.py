@@ -43,9 +43,13 @@ def dump(number):
 
 
 
-def save(path, data):
+def save(path, data, binary=True):
     if path:
-        with open(path, 'wb') as f:
+        if binary:
+            args = 'wb'
+        else:
+            args = 'w'
+        with open(path, args) as f:
             f.write(data)
     return data
 
@@ -68,7 +72,7 @@ def scale(units):
 
 class rmq(object):
     # Ref.: Bender, M. A., Farach-Colton, M. (2000). The LCA Problem Revisited.
-    
+
     def __init__(self, sequence):
         self.table = [sequence]
         length = len(sequence)
@@ -83,7 +87,7 @@ class rmq(object):
                 i += 1
             self.table.append(row)
             sequence = row
-    
+
     def max(self, i, j):
         k = (j - i).bit_length() - 1
         row = self.table[k]
