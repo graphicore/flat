@@ -25,12 +25,12 @@ def _adaptive_filtering(image):
     for y in range(image.height):
         offset = y*wn
         row = image.data[offset:offset+wn]
-        
+
         minimum = 0 # none
         for v in row:
             minimum += cache[v]
         code, scanline = '\0', row
-        
+
         m = 0 # sub
         for i in range(0, n):
             s[i] = v = row[i]
@@ -44,7 +44,7 @@ def _adaptive_filtering(image):
             minimum = m
             code, scanline = '\1', s
             s, t = t, s
-        
+
         m = 0 # up
         for i in range(0, wn):
             s[i] = v = (row[i] - previous[i]) & 0xff
@@ -55,7 +55,7 @@ def _adaptive_filtering(image):
             minimum = m
             code, scanline = '\2', s
             s, t = t, s
-        
+
         m = 0 # average
         for i in range(0, n):
             s[i] = v = (row[i] - previous[i]//2) & 0xff
@@ -69,7 +69,7 @@ def _adaptive_filtering(image):
             minimum = m
             code, scanline = '\3', s
             s, t = t, s
-        
+
         m = 0 # paeth
         for i in range(0, n):
             s[i] = v = (row[i] - previous[i]) & 0xff
@@ -82,7 +82,7 @@ def _adaptive_filtering(image):
                 break
         else:
             code, scanline = '\4', s
-        
+
         content.append(code)
         content.append(bytes(scanline)) # TODO python 3: remove bytes
         previous = row
@@ -92,15 +92,16 @@ def _adaptive_filtering(image):
 
 
 class png(object):
-    
+
     @staticmethod
     def valid(data):
-        return data.startswith('\x89PNG\r\n\x1a\n')
-    
+        return data.startswith(b'\x89PNG\r\n\x1a\n')
+
     def __init__(self, data):
         self.readable = r = readable(data)
         r.skip(8) # header
         length, name = r.parse('>L4s')
+        print('%d %s' % (length, name))
         if length != 13 or name != 'IHDR':
             raise ValueError('Invalid IHDR chunk.')
         self.width, self.height, \
@@ -123,7 +124,7 @@ class png(object):
             raise ValueError('Invalid filter method.')
         if interlace != 0:
             raise ValueError('Unsupported interlace method.')
-    
+
     def idat(self):
         r = self.readable
         r.jump(8 + 4 + 4 + 13 + 4) # header, length, name, IHDR, CRC
@@ -138,7 +139,7 @@ class png(object):
                 r.skip(length)
             r.skip(4) # CRC
         return bytearray().join(parts)
-    
+
     def decompress(self):
         wn, n = self.width*self.n, self.n
         content = bytearray(decompress(bytes(self.idat()))) # TODO python 3: remove bytearray/bytes

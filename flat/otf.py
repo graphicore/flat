@@ -10,17 +10,17 @@ from .readable import readable
 
 
 class otf(object):
-    
+
     @staticmethod
     def valid(data):
-        for version in ('\0\1\0\0', 'OTTO', 'true', 'typ1', 'ttcf'):
+        for version in (b'\0\1\0\0', b'OTTO', b'true', b'typ1', b'ttcf'):
             if data.startswith(version):
                 return True
         return False
-    
+
     def __init__(self, data, index=0):
         self.readable = r = readable(data)
-        if data.startswith('ttcf'):
+        if data.startswith(b'ttcf'):
             r.skip(4 + 4) # TTCTag, Version
             numFonts = r.uint32()
             if index >= numFonts:
@@ -30,14 +30,14 @@ class otf(object):
         self.offset = offset(r)
         self.records = [record(r) for i in range(self.offset.numTables)]
         self.records.sort(key=lambda entry: entry.tag)
-        if data.startswith('OTTO'):
-            self.find('CFF ')
+        if data.startswith(b'OTTO'):
+            self.find(b'CFF ')
             self.cff = cff(r)
         else:
             self.cff = None
         self.indexToLocFormat = self.head().indexToLocFormat
         self.numGlyphs = self.maxp().numGlyphs
-    
+
     def find(self, tag):
         records = self.records
         i, j = 0, len(records)
@@ -53,27 +53,27 @@ class otf(object):
                 self.readable.jump(entry.offset)
                 return entry
         raise ValueError('`%s` table not found.' % tag)
-    
+
     def psname(self):
         return self.name(6) # Postscript name
-    
+
     def density(self):
         return self.head().unitsPerEm
-    
+
     def ascender(self):
         return self.os2().sTypoAscender
-    
+
     def descender(self):
         return self.os2().sTypoDescender
-    
+
     def glyph(self, index):
         if self.cff:
             return self.cff.type2(index)
         return self.glyf(index)
-    
+
     def charmap(self):
         r = self.readable
-        cmap = self.find('cmap')
+        cmap = self.find(b'cmap')
         r.skip(2) # version
         numTables = r.uint16()
         for i in range(numTables):
@@ -116,12 +116,12 @@ class otf(object):
                     else:
                         result[code] = 0
         return result
-    
+
     def advances(self):
         r = self.readable
         numberOfHMetrics = self.hhea().numberOfHMetrics
         result = []
-        hmtx = self.find('hmtx')
+        hmtx = self.find(b'hmtx')
         advanceWidth = 0
         for i in range(numberOfHMetrics):
             advanceWidth = r.uint16()
@@ -129,7 +129,7 @@ class otf(object):
             result.append(advanceWidth)
         result.extend([advanceWidth]*(self.numGlyphs - numberOfHMetrics))
         return result
-    
+
     def kerning(self):
         r = self.readable
         result = [{} for i in range(self.numGlyphs)]
@@ -222,11 +222,11 @@ class otf(object):
                                                         result[first][second] = Value1
                 break
         return result
-    
+
     def embed(self):
         r = self.readable
         if self.cff:
-            entry = self.find('CFF ')
+            entry = self.find(b'CFF ')
             return r.read(entry.length)
         tags = 'cvt ', 'fpgm', 'glyf', 'head', 'hhea', 'hmtx', 'loca', 'maxp', 'prep'
         numTables = 0
@@ -264,10 +264,10 @@ class otf(object):
         data += bytearray().join(tables)
         data[head+8:head+12] = pack('>L', 0xb1b0afba - total & 0xffffffff)
         return data
-    
+
     def name(self, nameid):
         r = self.readable
-        name = self.find('name')
+        name = self.find(b'name')
         r.skip(2) # format
         count = r.uint16()
         stringOffset = r.uint16()
@@ -288,10 +288,10 @@ class otf(object):
                     s = r.read(length).decode('utf-16be')
                     return normalize('NFKD', s).encode('ascii', 'ignore')
         raise ValueError('String not found.')
-    
+
     def loca(self, index):
         r = self.readable
-        loca = self.find('loca')
+        loca = self.find(b'loca')
         if self.indexToLocFormat == 0:
             r.skip(index*2)
             offset = r.uint16()*2
@@ -299,14 +299,14 @@ class otf(object):
             r.skip(index*4)
             offset = r.uint32()
         return offset
-    
+
     def glyf(self, index):
         r = self.readable
         result = []
         location = self.loca(index)
         if location == self.loca(index + 1):
             return result
-        glyf = self.find('glyf')
+        glyf = self.find(b'glyf')
         r.skip(location)
         numberOfContours = r.int16()
         r.skip(8) # xMin, yMin, xMax, yMax
@@ -398,32 +398,32 @@ class otf(object):
                 if flags & 32 == 0: # MORE_COMPONENTS
                     break
         return result
-    
+
     def head(self):
-        self.find('head')
+        self.find(b'head')
         return head(self.readable)
-    
+
     def hhea(self):
-        self.find('hhea')
+        self.find(b'hhea')
         return hhea(self.readable)
-    
+
     def maxp(self):
-        self.find('maxp')
+        self.find(b'maxp')
         return maxp(self.readable)
-    
+
     def os2(self):
-        self.find('OS/2')
+        self.find(b'OS/2')
         return os2(self.readable)
-        
+
     def post(self):
-        self.find('post')
+        self.find(b'post')
         return post(self.readable)
 
 
 
 
 class offset(object):
-    
+
     def __init__(self, readable):
         self.sfntVersion = readable.uint32()
         self.numTables = readable.uint16()
@@ -432,7 +432,7 @@ class offset(object):
         self.rangeShift = readable.uint16()
 
 class record(object):
-    
+
     def __init__(self, readable):
         self.tag = readable.read(4)
         self.checkSum = readable.uint32()
@@ -443,7 +443,7 @@ class record(object):
 
 
 class head(object):
-    
+
     def __init__(self, readable):
         self.majorVersion = readable.uint16()
         self.minorVersion = readable.uint16()
@@ -465,7 +465,7 @@ class head(object):
         self.glyphDataFormat = readable.int16()
 
 class hhea(object):
-    
+
     def __init__(self, readable):
         self.majorVersion = readable.uint16()
         self.minorVersion = readable.uint16()
@@ -484,13 +484,13 @@ class hhea(object):
         self.numberOfHMetrics = readable.uint16()
 
 class maxp(object):
-    
+
     def __init__(self, readable):
         self.version = readable.int32()
         self.numGlyphs = readable.uint16()
 
 class os2(object):
-    
+
     def __init__(self, readable):
         self.version = readable.uint16()
         self.xAvgCharWidth = readable.int16()
@@ -542,7 +542,7 @@ class os2(object):
         self.usUpperOpticalPointSize = readable.uint16()
 
 class post(object):
-    
+
     def __init__(self, readable):
         self.version = readable.int32()
         self.italicAngle = readable.int32()
