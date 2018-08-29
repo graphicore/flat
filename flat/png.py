@@ -202,11 +202,12 @@ def serialize(image, optimized):
         content = b''.join(parts)
 
     idat = compress(content, 9 if optimized else 6)
-    return ''.join((
+
+    return b''.join((
         b"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a",
-        L(len(ihdr)), b'IHDR', ihdr, L(crc32(ihdr, crc32('IHDR')) & 0xffffffff),
-        L(len(idat)), b'IDAT', idat, L(crc32(idat, crc32('IDAT')) & 0xffffffff),
-        L(0), b'IEND', L(crc32('IEND') & 0xffffffff)))
+        L(len(ihdr)), b'IHDR', ihdr, L(crc32(ihdr, crc32(b'IHDR')) & 0xffffffff),
+        L(len(idat)), b'IDAT', idat, L(crc32(idat, crc32(b'IDAT')) & 0xffffffff),
+        L(0), b'IEND', L(crc32(b'IEND') & 0xffffffff)))
 
 
 
