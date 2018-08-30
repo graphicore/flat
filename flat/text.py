@@ -120,10 +120,12 @@ class strike(object):
         return paragraph((self.span(string),))
 
     def text(self, string):
-        return text(map(self.paragraph, linebreaks.split(string)))
+        m = list(map(self.paragraph, linebreaks.split(string)))
+        return text(m)
 
     def outlines(self, string):
-        return outlines(map(self.paragraph, linebreaks.split(string)))
+        m = list(map(self.paragraph, linebreaks.split(string)))
+        return outlines(m)
 
 
 
