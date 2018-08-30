@@ -228,7 +228,7 @@ class otf(object):
         if self.cff:
             entry = self.find(b'CFF ')
             return r.read(entry.length)
-        tags = 'cvt ', 'fpgm', 'glyf', 'head', 'hhea', 'hmtx', 'loca', 'maxp', 'prep'
+        tags = b'cvt ', b'fpgm', b'glyf', b'head', b'hhea', b'hmtx', b'loca', b'maxp', b'prep'
         numTables = 0
         for entry in self.records:
             if entry.tag in tags:
@@ -238,9 +238,10 @@ class otf(object):
         head = 0
         total = 0
         for entry in self.records:
-            if entry.tag in tags:
-                if entry.tag == 'head':
+            if bytes(entry.tag) in tags:
+                if bytes(entry.tag) == b'head':
                     head = position
+
                 r.jump(entry.offset)
                 length = entry.length
                 padding = 4 - length & 3
@@ -248,7 +249,7 @@ class otf(object):
                 records.append(pack('>4s3L', bytes(entry.tag),
                     entry.checkSum, position, length)) # TODO python 3: remove bytes
                 tables.append(data)
-                tables.append('\0'*padding)
+                tables.append(b'\0'*padding)
                 position += length + padding
                 total += entry.checkSum
         entrySelector = numTables.bit_length() - 1
@@ -257,7 +258,7 @@ class otf(object):
         offset = pack('>L4H', self.offset.sfntVersion,
             numTables, entrySelector, searchRange, rangeShift)
         data = bytearray(offset)
-        data += ''.join(records)
+        data += b''.join(records)
         r = readable(data)
         for i in range(len(data)//4):
             total += r.uint32()
