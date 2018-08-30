@@ -385,19 +385,20 @@ def _page_fixes(bleed, cropmarks, page):
     return prefix, 'Q'
 
 def serialize(document, compress, bleed, cropmarks):
-    header = '%PDF-1.3\n'
+    header = b'%PDF-1.3\n'
     pagesreference = reference(None)
     kids = []
     contents = []
     state, resources = _graphic_state(), _document_resources()
+
     for page in document.pages:
         mediabox, bleedbox, trimbox = _page_boxes(bleed, cropmarks, page)
         state.reset(); resources.reset()
-        code = '\n'.join(
+        code = b'\n'.join(
             item.pdf(page.height, state, resources) for item in page.items)
         if bleed or cropmarks:
             prefix, postfix = _page_fixes(bleed, cropmarks, page)
-            code = '%s\n%s\n%s' % (prefix, code, postfix)
+            code = b'%s\n%s\n%s' % (prefix, code, postfix)
         content = stream(0, {'Length': number(len(code))}, code)
         kid = obj(0, dictionary({
             'Type': name('Page'),
@@ -422,28 +423,28 @@ def serialize(document, compress, bleed, cropmarks):
     objects = [root, info, pages] + kids + resources.objects() + contents
     for i, o in enumerate(objects, 1):
         o.tag = i
-    fragments = ['%s\n' % o.pdf() for o in objects]
+    fragments = [b'%s\n' % o.pdf() for o in objects]
     position = len(header)
-    offsets = ['0000000000 65535 f \n']
+    offsets = [b'0000000000 65535 f \n']
     for fragment in fragments:
-        offsets.append('%010d 00000 n \n' % position)
+        offsets.append(b'%010d 00000 n \n' % position)
         position += len(fragment)
     xref = (
-        'xref\n'
-        '0 %d\n'
-        '%s') % (len(objects) + 1, ''.join(offsets))
+        b'xref\n'
+        b'0 %d\n'
+        b'%s') % (len(objects) + 1, ''.join(offsets))
     trailer = (
-        'trailer %s\n'
-        'startxref\n'
-        '%d\n'
-        '%%%%EOF') % (
+        b'trailer %s\n'
+        b'startxref\n'
+        b'%d\n'
+        b'%%%%EOF') % (
             dictionary({
                 'ID': array([hexstring(urandom(16))]*2),
                 'Root': reference(root),
                 'Info': reference(info),
                 'Size': number(len(offsets))}).pdf(),
             position)
-    return ''.join([header] + fragments + [xref, trailer])
+    return b''.join([header] + fragments + [xref, trailer])
 
 
 

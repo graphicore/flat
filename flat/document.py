@@ -80,7 +80,6 @@ class document(object):
 
     def pdf(self, path='', compress=False, bleed=False, cropmarks=False):
         data = pdfserialize(self, compress, bleed, cropmarks)
-        print(data)
         return save(path, data)
 
 

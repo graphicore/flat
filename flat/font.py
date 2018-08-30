@@ -5,7 +5,7 @@ from .otf import otf
 
 
 class font(object):
-    
+
     @staticmethod
     def open(path, index=0):
         with open(path, 'rb') as f:
@@ -14,10 +14,10 @@ class font(object):
                 source = otf(data, index)
                 return font(source)
             raise ValueError('Unsupported font format.')
-    
+
     def __init__(self, source):
         self.source = source
-        self.name = bytes(source.psname()) # # TODO python 3: remove bytes
+        self.name = source.psname().decode('utf8')
         self.density = source.density()
         self.ascender = source.ascender()
         self.descender = source.descender()
@@ -25,7 +25,7 @@ class font(object):
         self.advances = source.advances()
         self.kerning = source.kerning()
         self.glyphs = {}
-    
+
     def glyph(self, index):
         if index not in self.glyphs:
             commands = self.source.glyph(index)
@@ -33,7 +33,7 @@ class font(object):
                 c.transform(1, 0, 0, -1, 0, 0)
             self.glyphs[index] = commands
         return self.glyphs[index]
-    
+
     def glyphmap(self):
         result = [(i, c) for c, i in self.charmap.items() if i != 0]
         result.sort()
