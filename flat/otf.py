@@ -264,7 +264,7 @@ class otf(object):
             total += r.uint32()
         data += bytearray().join(tables)
         data[head+8:head+12] = pack('>L', 0xb1b0afba - total & 0xffffffff)
-        return data
+        return bytes(data)
 
     def name(self, nameid):
         r = self.readable
