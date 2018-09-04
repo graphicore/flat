@@ -98,14 +98,18 @@ class stream(object):
 
     def pdf(self):
         d = dictionary(self.dictionary)
+        pdf = d.pdf().encode('utf8')
+        if isinstance(self.stream, str):
+            stream = self.stream.encode('utf8')
+        else:
+            stream = self.stream
 
-        return (
-            '%d 0 obj\n'
-            '%s\n'
-            'stream\n'
-            '%s\n'
-            'endstream\n'
-            'endobj') % (self.tag, d.pdf(), self.stream)
+        return (b'%d 0 obj\n'
+            b'%s\n'
+            b'stream\n'
+            b'%s\n'
+            b'endstream\n'
+            b'endobj') % (self.tag, pdf, stream)
 
 class reference(object):
 
@@ -433,9 +437,19 @@ def serialize(document, compress, bleed, cropmarks):
     objects = [root, info, pages] + kids + resources.objects() + contents
     for i, o in enumerate(objects, 1):
         o.tag = i
-    fragments = [b'%s\n' % o.pdf().encode('utf8') for o in objects]
+
+    #fragments = [b'%s\n' % o.pdf().encode('utf8') for o in objects]
+    fragments = []
+
+    for o in objects:
+        pdf = o.pdf()
+        if isinstance(pdf, str):
+            pdf = pdf.encode('utf8')
+        fragments.append(b'%s\n' % pdf)
+
     position = len(header)
     offsets = [b'0000000000 65535 f \n']
+
     for fragment in fragments:
         offsets.append(b'%010d 00000 n \n' % position)
         position += len(fragment)
