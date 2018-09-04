@@ -9,9 +9,9 @@ from .path import elevated
 
 
 class style(object):
-    
+
     __slots__ = 'stroke', 'fill', 'width', 'cap', 'join', 'limit'
-    
+
     def __init__(self):
         self.stroke = gray(0)
         self.fill = None
@@ -19,7 +19,7 @@ class style(object):
         self.cap = 'butt'
         self.join = 'miter'
         self.limit = 10.0
-    
+
     def pdf(self, state, resources):
         fragments = []
         s, ss = self.stroke, state.stroke
@@ -68,12 +68,12 @@ class style(object):
             fragments.append('%s M' % dump(self.limit))
             state.limit = self.limit
         return ' '.join(fragments)
-    
+
     def pdfpaint(self):
         if self.stroke:
             return 'B' if self.fill else 'S'
         return 'f' if self.fill else 'n'
-    
+
     def svg(self):
         if self.fill:
             attributes = ['fill="%s"' % self.fill.svg()]
@@ -95,68 +95,68 @@ class style(object):
 
 
 class shape(object):
-    
+
     __slots__ = 'style',
-    
+
     def __init__(self):
         self.style = style()
-    
+
     def stroke(self, color):
         self.style.stroke = color
         return self
-    
+
     def fill(self, color):
         self.style.fill = color
         return self
-    
+
     def nostroke(self):
         self.style.stroke = None
         return self
-    
+
     def nofill(self):
         self.style.fill = None
         return self
-    
+
     def width(self, value, units='pt'):
         self.style.width = value*scale(units)
         return self
-    
+
     def cap(self, kind):
         if kind not in ('butt', 'round', 'square'):
             raise ValueError('Invalid stroke cap.')
         self.style.cap = kind
         return self
-    
+
     def join(self, kind):
         if kind not in ('miter', 'round', 'bevel'):
             raise ValueError('Invalid stroke join.')
         self.style.join = kind
         return self
-    
+
     def limit(self, value, units='pt'):
         if value < 1.0:
             raise ValueError('Invalid miter limit.')
         self.style.limit = value*scale(units)
         return self
-    
+
     def line(self, x0, y0, x1, y1):
         return line(self.style, x0, y0, x1, y1)
-    
+
     def polyline(self, coordinates):
         return polyline(self.style, coordinates)
-    
+
     def polygon(self, coordinates):
         return polygon(self.style, coordinates)
-    
+
     def rectangle(self, x, y, width, height):
         return rectangle(self.style, x, y, width, height)
-    
+
     def circle(self, x, y, r):
         return circle(self.style, x, y, r)
-    
+
     def ellipse(self, x, y, rx, ry):
         return ellipse(self.style, x, y, rx, ry)
-    
+
     def path(self, commands):
         return path(self.style, commands)
 
@@ -164,31 +164,31 @@ class shape(object):
 
 
 class line(object):
-    
+
     __slots__ = 'style', 'x0', 'y0', 'x1', 'y1'
-    
+
     def __init__(self, style, x0, y0, x1, y1):
         self.style = style
         self.x0, self.y0 = x0, y0
         self.x1, self.y1 = x1, y1
-    
+
     def commands(self):
         return (
             moveto(self.x0, self.y0),
             lineto(self.x1, self.y1))
-    
+
     def pdf(self, k, x, y):
         return '%s %s m %s %s l %s' % (
             dump(self.x0*k+x), dump(y-self.y0*k),
             dump(self.x1*k+x), dump(y-self.y1*k),
             self.style.pdfpaint())
-    
+
     def svg(self, k, x, y):
         return '<line x1="%s" y1="%s" x2="%s" y2="%s" %s />' % (
             dump(self.x0*k+x), dump(self.y0*k+y),
             dump(self.x1*k+x), dump(self.y1*k+y),
             self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -196,13 +196,13 @@ class line(object):
 
 
 class polyline(object):
-    
+
     __slots__ = 'style', 'coordinates'
-    
+
     def __init__(self, style, coordinates):
         self.style = style
         self.coordinates = coordinates
-    
+
     def commands(self):
         coordinates = self.coordinates
         commands = []
@@ -213,7 +213,7 @@ class polyline(object):
             else:
                 commands.append(lineto(cx, cy))
         return commands
-    
+
     def pdf(self, k, x, y):
         coordinates = self.coordinates
         fragments = []
@@ -227,7 +227,7 @@ class polyline(object):
                 fragments.append('l')
         fragments.append(self.style.pdfpaint())
         return ' '.join(fragments)
-    
+
     def svg(self, k, x, y):
         fragments = []
         for c in self.coordinates:
@@ -235,7 +235,7 @@ class polyline(object):
             x, y = y, x
         return '<polyline points="%s" %s />' % (
             ' '.join(fragments), self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -243,13 +243,13 @@ class polyline(object):
 
 
 class polygon(object):
-    
+
     __slots__ = 'style', 'coordinates'
-    
+
     def __init__(self, style, coordinates):
         self.style = style
         self.coordinates = coordinates
-    
+
     def commands(self):
         coordinates = self.coordinates
         commands = []
@@ -261,7 +261,7 @@ class polygon(object):
                 commands.append(lineto(cx, cy))
         commands.append(closepath)
         return commands
-    
+
     def pdf(self, k, x, y):
         coordinates = self.coordinates
         fragments = []
@@ -276,7 +276,7 @@ class polygon(object):
         fragments.append('h')
         fragments.append(self.style.pdfpaint())
         return ' '.join(fragments)
-    
+
     def svg(self, k, x, y):
         fragments = []
         for c in self.coordinates:
@@ -284,7 +284,7 @@ class polygon(object):
             x, y = y, x
         return '<polygon points="%s" %s />' % (
             ' '.join(fragments), self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -292,14 +292,14 @@ class polygon(object):
 
 
 class rectangle(object):
-    
+
     __slots__ = 'style', 'x', 'y', 'width', 'height'
-    
+
     def __init__(self, style, x, y, width, height):
         self.style = style
         self.x, self.y = x, y
         self.width, self.height = width, height
-    
+
     def commands(self):
         x, y = self.x, self.y
         width, height = self.width, self.height
@@ -309,19 +309,19 @@ class rectangle(object):
             lineto(x+width, y+height),
             lineto(x, y+height),
             closepath)
-    
+
     def pdf(self, k, x, y):
         return '%s %s %s %s re %s' % (
             dump(self.x*k+x), dump(y-(self.y+self.height)*k),
             dump(self.width*k), dump(self.height*k),
             self.style.pdfpaint())
-    
+
     def svg(self, k, x, y):
         return '<rect x="%s" y="%s" width="%s" height="%s" %s />' % (
             dump(self.x*k+x), dump(self.y*k+y),
             dump(self.width*k), dump(self.height*k),
             self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -329,25 +329,25 @@ class rectangle(object):
 
 
 class circle(object):
-    
+
     __slots__ = 'style', 'x', 'y', 'r'
-    
+
     def __init__(self, style, x, y, r):
         self.style = style
         self.x, self.y, self.r = x, y, r
-    
+
     def commands(self):
         return ellipse(self.style, self.x, self.y, self.r, self.r).commands()
-    
+
     def pdf(self, k, x, y):
         return ellipse(self.style, self.x, self.y, self.r, self.r).pdf(k, x, y)
-    
+
     def svg(self, k, x, y):
         return '<circle cx="%s" cy="%s" r="%s" %s />' % (
             dump(self.x*k+x), dump(self.y*k+y),
             dump(self.r*k),
             self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -355,13 +355,13 @@ class circle(object):
 
 
 class ellipse(object):
-    
+
     __slots__ = 'style', 'x', 'y', 'rx', 'ry'
-    
+
     def __init__(self, style, x, y, rx, ry):
         self.style = style
         self.x, self.y, self.rx, self.ry = x, y, rx, ry
-    
+
     def commands(self):
         x, y, rx, ry = self.x, self.y, self.rx, self.ry
         k = 4.0/3.0*(sqrt(2.0) - 1.0)
@@ -374,7 +374,7 @@ class ellipse(object):
             curveto(x-rx, y+dy, x-dx, y+ry, x, y+ry),
             curveto(x+dx, y+ry, x+rx, y+dy, x+rx, y),
             closepath)
-    
+
     def pdf(self, k, x, y):
         x, y, rx, ry = self.x*k+x, y-self.y*k, self.rx*k, self.ry*k
         k = 4.0/3.0*(sqrt(2.0) - 1.0)
@@ -398,13 +398,13 @@ class ellipse(object):
             x0, y3, x1, y4, x2, y4,
             x3, y4, x4, y3, x4, y2,
             self.style.pdfpaint())
-    
+
     def svg(self, k, x, y):
         return '<ellipse cx="%s" cy="%s" rx="%s" ry="%s" %s />' % (
             dump(self.x*k+x), dump(self.y*k+y),
             dump(self.rx*k), dump(self.ry*k),
             self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -412,26 +412,26 @@ class ellipse(object):
 
 
 class path(object):
-    
+
     __slots__ = 'style', 'cs'
-    
+
     def __init__(self, style, commands):
         self.style = style
         self.cs = commands
-    
+
     def commands(self):
         return self.cs
-    
+
     def pdf(self, k, x, y):
         fragments = [c.pdf(k, x, y) for c in elevated(self.cs)]
         fragments.append(self.style.pdfpaint())
         return ' '.join(fragments)
-    
+
     def svg(self, k, x, y):
         return '<path d="%s" %s />' % (
             ' '.join(c.svg(k, x, y) for c in self.cs),
             self.style.svg())
-    
+
     def placed(self, k):
         return placedshape(self, k)
 
@@ -439,28 +439,28 @@ class path(object):
 
 
 class placedshape(object):
-    
+
     __slots__ = 'item', 'k', 'x', 'y'
-    
+
     def __init__(self, item, k):
         self.item = item
         self.k = k
         self.x, self.y = 0.0, 0.0
-    
+
     def position(self, x, y):
         self.x, self.y = x*self.k, y*self.k
         return self
-    
+
     def pdf(self, height, state, resources):
         setup = self.item.style.pdf(state, resources)
         shape = self.item.pdf(self.k, self.x, height-self.y)
         if setup:
             return '%s\n%s' % (setup, shape)
         return shape
-    
+
     def svg(self):
         return self.item.svg(self.k, self.x, self.y)
-    
+
     def rasterize(self, rasterizer, k, x, y):
         style, commands = self.item.style, self.item.commands()
         factor = k

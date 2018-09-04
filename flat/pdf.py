@@ -241,8 +241,10 @@ class _document_resources(object):
                         '%d beginbfchar %s endbfchar\n' % (
                             len(chunk), ''.join('<%04x><%04x>' % c for c in chunk)
                         ) for chunk in chunks(font.glyphmap(), 100)))
+
                 tounicode = stream(0, {
                     'Length': number(len(tounicodedata))}, tounicodedata)
+
                 self.dependencies.extend((fontfile, descriptor, tounicode))
                 self.cache[key] = _named_resource(
                     'F%d' % len(self.fonts),
@@ -385,7 +387,7 @@ def _page_fixes(bleed, cropmarks, page):
     return prefix, 'Q'
 
 def serialize(document, compress, bleed, cropmarks):
-    header = b'%PDF-1.3\n'
+    header = '%PDF-1.3\n'
     pagesreference = reference(None)
     kids = []
     contents = []
@@ -394,11 +396,11 @@ def serialize(document, compress, bleed, cropmarks):
     for page in document.pages:
         mediabox, bleedbox, trimbox = _page_boxes(bleed, cropmarks, page)
         state.reset(); resources.reset()
-        code = b'\n'.join(
+        code = '\n'.join(
             item.pdf(page.height, state, resources) for item in page.items)
         if bleed or cropmarks:
             prefix, postfix = _page_fixes(bleed, cropmarks, page)
-            code = b'%s\n%s\n%s' % (prefix, code, postfix)
+            code = '%s\n%s\n%s' % (prefix, code, postfix)
         content = stream(0, {'Length': number(len(code))}, code)
         kid = obj(0, dictionary({
             'Type': name('Page'),
@@ -423,28 +425,31 @@ def serialize(document, compress, bleed, cropmarks):
     objects = [root, info, pages] + kids + resources.objects() + contents
     for i, o in enumerate(objects, 1):
         o.tag = i
-    fragments = [b'%s\n' % o.pdf() for o in objects]
+    fragments = ['%s\n' % o.pdf() for o in objects]
     position = len(header)
-    offsets = [b'0000000000 65535 f \n']
+    offsets = ['0000000000 65535 f \n']
     for fragment in fragments:
-        offsets.append(b'%010d 00000 n \n' % position)
+        offsets.append('%010d 00000 n \n' % position)
         position += len(fragment)
     xref = (
-        b'xref\n'
-        b'0 %d\n'
-        b'%s') % (len(objects) + 1, ''.join(offsets))
+        'xref\n'
+        '0 %d\n'
+        '%s') % (len(objects) + 1, ''.join(offsets))
     trailer = (
-        b'trailer %s\n'
-        b'startxref\n'
-        b'%d\n'
-        b'%%%%EOF') % (
+        'trailer %s\n'
+        'startxref\n'
+        '%d\n'
+        '%%%%EOF') % (
             dictionary({
                 'ID': array([hexstring(urandom(16))]*2),
                 'Root': reference(root),
                 'Info': reference(info),
                 'Size': number(len(offsets))}).pdf(),
             position)
-    return b''.join([header] + fragments + [xref, trailer])
+    #print(fragments)
+    s = ''.join([header] + fragments + [xref, trailer])
+    s = s.encode('utf8')
+    return s
 
 
 

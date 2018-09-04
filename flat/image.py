@@ -61,7 +61,8 @@ class image(object):
     @staticmethod
     def open(path):
         with open(path, 'rb') as f:
-            data = bytearray(f.read()) # TODO python 3: bytearray -> bytes
+            data = f.read()
+
             if jpeg.valid(data):
                 source = jpeg(data)
                 rotation = source.rotation
@@ -70,6 +71,7 @@ class image(object):
                 rotation = 0
             else:
                 raise ValueError('Unsupported image format.')
+
             i = image(0, 0, source.kind)
             if rotation == 90 or rotation == 270:
                 i.width, i.height = source.height, source.width

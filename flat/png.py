@@ -101,8 +101,7 @@ class png(object):
         self.readable = r = readable(data)
         r.skip(8) # header
         length, name = r.parse('>L4s')
-        print('%d %s' % (length, name))
-        if length != 13 or name != 'IHDR':
+        if length != 13 or name != b'IHDR':
             raise ValueError('Invalid IHDR chunk.')
         self.width, self.height, \
             depth, color, compression, fltr, interlace = r.parse('>LLBBBBB') # IHDR
