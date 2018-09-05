@@ -494,7 +494,7 @@ def _scale_factor(table):
     return factor
 
 def _marker_segment(marker, data):
-    return bytes('\xff' + marker + pack('>H', len(data) + 2) + data) # TODO python 3: remove bytes
+    return bytes(b'\xff' + marker + pack('>H', len(data) + 2) + data) # TODO python 3: remove bytes
 
 class _entropy_encoder(object):
 
@@ -711,6 +711,7 @@ def serialize(image, quality):
         ca = _huffman_table(_ca_lengths, _ca_values)
         cs = _scale_factor(cq)
     e = _entropy_encoder()
+
     for y in range(0, h, 8):
         for x in range(0, w, 8):
             i = 0
@@ -739,29 +740,29 @@ def serialize(image, quality):
                 vdc = e.encode(vdc, vblock, ls, ld, la)
                 kdc = e.encode(kdc, kblock, ls, ld, la)
     e.write(0x7f, 7) # padding
-    app = 'Adobe\0\144\200\0\0\0\0' # tag, version, flags0, flags1, transform
-    sof = '\10' + pack('>HHB', h, w, n) + '\1\21\0' # depth, id, sampling, qtable
-    sos = pack('B', n) + '\1\0' # id, htable
-    dqt = '\0' + lq
-    dht = '\0' + _ld_lengths + _ld_values + '\20' + _la_lengths + _la_values
+    app = b'Adobe\0\144\200\0\0\0\0' # tag, version, flags0, flags1, transform
+    sof = b'\10' + pack('>HHB', h, w, n) + b'\1\21\0' # depth, id, sampling, qtable
+    sos = pack('B', n) + b'\1\0' # id, htable
+    dqt = b'\0' + lq
+    dht = b'\0' + _ld_lengths + _ld_values + b'\20' + _la_lengths + _la_values
     if n == 3:
-        sof += '\2\21\1\3\21\1'
-        sos += '\2\21\3\21'
-        dqt += '\1' + cq
-        dht += '\1' + _cd_lengths + _cd_values + '\21' + _ca_lengths + _ca_values
+        sof += b'\2\21\1\3\21\1'
+        sos += b'\2\21\3\21'
+        dqt += b'\1' + cq
+        dht += b'\1' + _cd_lengths + _cd_values + b'\21' + _ca_lengths + _ca_values
     elif n == 4:
-        sof += '\2\21\0\3\21\0\4\21\0'
-        sos += '\2\0\3\0\4\0'
-    sos += '\0\77\0' # start, end, approximation
-    return ''.join([
-        '\xff\xd8', # SOI
-        _marker_segment('\xee', app) if n == 4 else '',
-        _marker_segment('\xdb', dqt),
-        _marker_segment('\xc0', sof),
-        _marker_segment('\xc4', dht),
-        _marker_segment('\xda', sos),
+        sof += b'\2\21\0\3\21\0\4\21\0'
+        sos += b'\2\0\3\0\4\0'
+    sos += b'\0\77\0' # start, end, approximation
+    return b''.join([
+        b'\xff\xd8', # SOI
+        _marker_segment(b'\xee', app) if n == 4 else b'',
+        _marker_segment(b'\xdb', dqt),
+        _marker_segment(b'\xc0', sof),
+        _marker_segment(b'\xc4', dht),
+        _marker_segment(b'\xda', sos),
         e.dump(),
-        '\xff\xd9']) # EOI
+        b'\xff\xd9']) # EOI
 
 
 
