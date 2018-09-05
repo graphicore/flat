@@ -404,11 +404,9 @@ def serialize(document, compress, bleed, cropmarks):
     for page in document.pages:
         mediabox, bleedbox, trimbox = _page_boxes(bleed, cropmarks, page)
         state.reset(); resources.reset()
-        items = []
-        for item in page.items:
-            p = item.pdf(page.height, state, resources).encode('utf8')
         code = b'\n'.join(
             item.pdf(page.height, state, resources).encode('utf8') for item in page.items)
+
         if bleed or cropmarks:
             prefix, postfix = _page_fixes(bleed, cropmarks, page)
             code = b'%s\n%s\n%s' % (prefix, code, postfix)

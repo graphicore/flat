@@ -72,10 +72,12 @@ class style(object):
                 state.name, state.size = n, s
         f, ff = self.color, state.fill
         fo, ffo = isinstance(f, overprint), isinstance(ff, overprint)
+
         if f and fo != ffo:
             sso = isinstance(state.stroke, overprint)
             resource = resources.overprint(sso, fo)
             fragments.append('/%s gs' % resource.name)
+
         if fo:
             f = f.color
         if ffo:
