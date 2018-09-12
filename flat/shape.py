@@ -13,7 +13,7 @@ class style(object):
     __slots__ = 'stroke', 'fill', 'width', 'cap', 'join', 'limit'
 
     def __init__(self):
-        self.stroke = gray(0)
+        self.stroke = None
         self.fill = None
         self.width = 1.0
         self.cap = 'butt'
